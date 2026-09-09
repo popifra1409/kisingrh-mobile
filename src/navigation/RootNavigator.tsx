@@ -6,6 +6,11 @@ import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import ActivateScreen from '../screens/ActivateScreen';
 import HomeScreen from '../screens/HomeScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import DependentsScreen from '../screens/DependentsScreen';
+import AddDependentScreen from '../screens/AddDependentScreen';
+import DiplomasScreen from '../screens/DiplomasScreen';
+import AddDiplomaScreen from '../screens/AddDiplomaScreen';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -14,6 +19,11 @@ export type AuthStackParamList = {
 
 export type AppStackParamList = {
   Home: undefined;
+  Profile: undefined;
+  Dependents: undefined;
+  AddDependent: undefined;
+  Diplomas: undefined;
+  AddDiploma: undefined;
 };
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -32,6 +42,11 @@ function AppNavigator() {
   return (
     <AppStack.Navigator>
       <AppStack.Screen name="Home" component={HomeScreen} options={{ title: 'Accueil' }} />
+      <AppStack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Mon Profil' }} />
+      <AppStack.Screen name="Dependents" component={DependentsScreen} options={{ title: 'Ayants Droit' }} />
+      <AppStack.Screen name="AddDependent" component={AddDependentScreen} options={{ title: 'Nouvel Ayant Droit' }} />
+      <AppStack.Screen name="Diplomas" component={DiplomasScreen} options={{ title: 'Diplômes & Formations' }} />
+      <AppStack.Screen name="AddDiploma" component={AddDiplomaScreen} options={{ title: 'Nouveau Diplôme' }} />
     </AppStack.Navigator>
   );
 }
