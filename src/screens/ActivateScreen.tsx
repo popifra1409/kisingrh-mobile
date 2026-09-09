@@ -9,9 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
+import { useAppInfo } from '../context/AppInfoContext';
 import { extractApiError } from '../api/client';
 import type { AuthStackParamList } from '../navigation/RootNavigator';
 
@@ -19,6 +21,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Activate'>;
 
 export default function ActivateScreen({ navigation }: Props) {
   const { activate } = useAuth();
+  const { appInfo } = useAppInfo();
 
   const [matricule, setMatricule] = useState('');
   const [temporaryPassword, setTemporaryPassword] = useState('');
@@ -73,6 +76,18 @@ export default function ActivateScreen({ navigation }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.logoContainer}>
+          {appInfo?.logo_url ? (
+            <Image source={{ uri: appInfo.logo_url }} style={styles.logo} resizeMode="contain" />
+          ) : (
+            <View style={styles.logoPlaceholder}>
+              <Text style={styles.logoPlaceholderText}>
+                {(appInfo?.hospital_short_name ?? 'HGY').charAt(0)}
+              </Text>
+            </View>
+          )}
+        </View>
+
         <Text style={styles.title}>Activer mon compte</Text>
         <Text style={styles.subtitle}>
           Utilisez le matricule et le mot de passe temporaire communiqués par les
@@ -159,6 +174,17 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#fff',
   },
+  logoContainer: { alignItems: 'center', marginBottom: 20 },
+  logo: { width: 80, height: 80 },
+  logoPlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 14,
+    backgroundColor: '#1e3a5f',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoPlaceholderText: { color: '#fff', fontSize: 30, fontWeight: '700' },
   title: { fontSize: 26, fontWeight: '700', color: '#1e3a5f', marginBottom: 8 },
   subtitle: { fontSize: 13, color: '#6b7280', marginBottom: 28, lineHeight: 18 },
   field: { marginBottom: 16 },

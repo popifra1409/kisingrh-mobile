@@ -9,9 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
+import { useAppInfo } from '../context/AppInfoContext';
 import { extractApiError } from '../api/client';
 import type { AuthStackParamList } from '../navigation/RootNavigator';
 
@@ -19,6 +21,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
   const { login } = useAuth();
+  const { appInfo } = useAppInfo();
   const [matricule, setMatricule] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,6 +52,21 @@ export default function LoginScreen({ navigation }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.logoContainer}>
+          {appInfo?.logo_url ? (
+            <Image source={{ uri: appInfo.logo_url }} style={styles.logo} resizeMode="contain" />
+          ) : (
+            <View style={styles.logoPlaceholder}>
+              <Text style={styles.logoPlaceholderText}>
+                {(appInfo?.hospital_short_name ?? 'HGY').charAt(0)}
+              </Text>
+            </View>
+          )}
+          {appInfo?.hospital_name && (
+            <Text style={styles.hospitalName}>{appInfo.hospital_name}</Text>
+          )}
+        </View>
+
         <Text style={styles.title}>Connexion</Text>
         <Text style={styles.subtitle}>Accédez à votre espace employé</Text>
 
@@ -108,6 +126,19 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#fff',
   },
+  logoContainer: { alignItems: 'center', marginBottom: 24 },
+  logo: { width: 96, height: 96, marginBottom: 8 },
+  logoPlaceholder: {
+    width: 96,
+    height: 96,
+    borderRadius: 16,
+    backgroundColor: '#1e3a5f',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  logoPlaceholderText: { color: '#fff', fontSize: 36, fontWeight: '700' },
+  hospitalName: { fontSize: 13, fontWeight: '600', color: '#374151', textAlign: 'center' },
   title: { fontSize: 28, fontWeight: '700', color: '#1e3a5f', marginBottom: 4 },
   subtitle: { fontSize: 14, color: '#6b7280', marginBottom: 32 },
   field: { marginBottom: 16 },
