@@ -62,6 +62,31 @@ export default function ProfileScreen({ navigation }: Props) {
     }
 
     async function handlePickPhoto() {
+        Alert.alert('Changer ma photo', 'Comment souhaitez-vous procéder ?', [
+            { text: 'Annuler', style: 'cancel' },
+            { text: 'Prendre une photo', onPress: () => pickFromCamera() },
+            { text: 'Choisir dans la galerie', onPress: () => pickFromLibrary() },
+        ]);
+    }
+
+    async function pickFromCamera() {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+            Alert.alert('Permission requise', "Autorisez l'accès à la caméra pour prendre une photo.");
+            return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            quality: 0.7,
+            allowsEditing: true,
+            aspect: [1, 1],
+        });
+
+        await handlePickedAsset(result);
+    }
+
+    async function pickFromLibrary() {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!permission.granted) {
             Alert.alert('Permission requise', "Autorisez l'accès à vos photos pour changer votre photo de profil.");
@@ -75,6 +100,10 @@ export default function ProfileScreen({ navigation }: Props) {
             aspect: [1, 1],
         });
 
+        await handlePickedAsset(result);
+    }
+
+    async function handlePickedAsset(result: ImagePicker.ImagePickerResult) {
         if (result.canceled || !result.assets?.[0]) return;
 
         const asset = result.assets[0];

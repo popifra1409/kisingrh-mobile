@@ -11,6 +11,9 @@ import DependentsScreen from '../screens/DependentsScreen';
 import AddDependentScreen from '../screens/AddDependentScreen';
 import DiplomasScreen from '../screens/DiplomasScreen';
 import AddDiplomaScreen from '../screens/AddDiplomaScreen';
+import LeavesScreen from '../screens/LeavesScreen';
+import LeaveDetailScreen from '../screens/LeaveDetailScreen';
+import NewLeaveRequestScreen from '../screens/NewLeaveRequestScreen';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -24,6 +27,9 @@ export type AppStackParamList = {
   AddDependent: undefined;
   Diplomas: undefined;
   AddDiploma: undefined;
+  Leaves: undefined;
+  LeaveDetail: { id: number };
+  NewLeaveRequest: undefined;
 };
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -47,6 +53,9 @@ function AppNavigator() {
       <AppStack.Screen name="AddDependent" component={AddDependentScreen} options={{ title: 'Nouvel Ayant Droit' }} />
       <AppStack.Screen name="Diplomas" component={DiplomasScreen} options={{ title: 'Diplômes & Formations' }} />
       <AppStack.Screen name="AddDiploma" component={AddDiplomaScreen} options={{ title: 'Nouveau Diplôme' }} />
+      <AppStack.Screen name="Leaves" component={LeavesScreen} options={{ title: 'Mes Congés' }} />
+      <AppStack.Screen name="LeaveDetail" component={LeaveDetailScreen} options={{ title: 'Détail de la Demande' }} />
+      <AppStack.Screen name="NewLeaveRequest" component={NewLeaveRequestScreen} options={{ title: 'Nouvelle Demande' }} />
     </AppStack.Navigator>
   );
 }

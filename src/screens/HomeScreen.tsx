@@ -32,6 +32,10 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={styles.menuButtonText}>👤 Mon Profil</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('Leaves')}>
+        <Text style={styles.menuButtonText}>🏖️ Mes Congés</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.logoutButton} onPress={logout}>
         <Text style={styles.logoutText}>Se déconnecter</Text>
       </TouchableOpacity>
