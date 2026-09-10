@@ -15,6 +15,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { fetchProfile, updateProfile, uploadProfilePhoto, EmployeeProfile } from '../api/profile';
 import { extractApiError } from '../api/client';
+import { enqueue } from '../offline/queue';
+import axios from 'axios';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/RootNavigator';
 
@@ -127,12 +129,26 @@ export default function ProfileScreen({ navigation }: Props) {
         setErrorMessage(null);
         setIsSaving(true);
 
+        const payload = { phone, email, address, city };
+
         try {
-            const updated = await updateProfile({ phone, email, address, city });
+            const updated = await updateProfile(payload);
             setProfile(updated);
             setIsEditing(false);
         } catch (error) {
-            setErrorMessage(extractApiError(error).message);
+            if (axios.isAxiosError(error) && !error.response) {
+                // Pas de réponse du serveur = probablement hors réseau hospitalier :
+                // on enregistre localement pour synchronisation ultérieure.
+                await enqueue('update_profile', payload);
+                setProfile((prev) => (prev ? { ...prev, ...payload } : prev));
+                setIsEditing(false);
+                Alert.alert(
+                    'Enregistré localement',
+                    "Le serveur n'est pas joignable actuellement. Vos modifications seront envoyées automatiquement dès que vous serez sur le réseau de l'hôpital (bouton Synchroniser dans Paramètres)."
+                );
+            } else {
+                setErrorMessage(extractApiError(error).message);
+            }
         } finally {
             setIsSaving(false);
         }

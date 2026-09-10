@@ -36,6 +36,10 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={styles.menuButtonText}>🏖️ Mes Congés</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.menuButton} onPress={() => navigation.navigate('Settings')}>
+        <Text style={styles.menuButtonText}>⚙️ Paramètres</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.logoutButton} onPress={logout}>
         <Text style={styles.logoutText}>Se déconnecter</Text>
       </TouchableOpacity>

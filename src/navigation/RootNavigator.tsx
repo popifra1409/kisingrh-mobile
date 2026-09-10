@@ -14,6 +14,7 @@ import AddDiplomaScreen from '../screens/AddDiplomaScreen';
 import LeavesScreen from '../screens/LeavesScreen';
 import LeaveDetailScreen from '../screens/LeaveDetailScreen';
 import NewLeaveRequestScreen from '../screens/NewLeaveRequestScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -30,6 +31,7 @@ export type AppStackParamList = {
   Leaves: undefined;
   LeaveDetail: { id: number };
   NewLeaveRequest: undefined;
+  Settings: undefined;
 };
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -56,6 +58,7 @@ function AppNavigator() {
       <AppStack.Screen name="Leaves" component={LeavesScreen} options={{ title: 'Mes Congés' }} />
       <AppStack.Screen name="LeaveDetail" component={LeaveDetailScreen} options={{ title: 'Détail de la Demande' }} />
       <AppStack.Screen name="NewLeaveRequest" component={NewLeaveRequestScreen} options={{ title: 'Nouvelle Demande' }} />
+      <AppStack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Paramètres' }} />
     </AppStack.Navigator>
   );
 }

@@ -9,6 +9,6 @@
  *
  * Le téléphone et l'ordinateur doivent être sur le MÊME réseau Wi-Fi/LAN.
  */
-export const API_BASE_URL = 'http://192.168.43.180:8000/api';
+export const API_BASE_URL = 'http://192.168.10.17:8000/api';
 
 export const API_TIMEOUT_MS = 15000;

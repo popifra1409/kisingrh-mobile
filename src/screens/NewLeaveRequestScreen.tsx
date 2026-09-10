@@ -14,6 +14,9 @@ import * as DocumentPicker from 'expo-document-picker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { fetchLeaveTypes, fetchLeaveBalance, createLeave, LeaveType, LeaveBalance } from '../api/leaves';
 import { extractApiError } from '../api/client';
+import { enqueue } from '../offline/queue';
+import { persistPickedFile } from '../offline/fileStorage';
+import axios from 'axios';
 import type { AppStackParamList } from '../navigation/RootNavigator';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'NewLeaveRequest'>;
@@ -114,25 +117,49 @@ export default function NewLeaveRequestScreen({ navigation }: Props) {
 
         setIsSubmitting(true);
 
+        const payload = {
+            leave_type_id: selectedTypeId,
+            start_date: startDate.trim(),
+            end_date: endDate.trim(),
+            is_split: isSplit,
+            start_date_2: isSplit ? startDate2.trim() : undefined,
+            end_date_2: isSplit ? endDate2.trim() : undefined,
+            reason: reason.trim(),
+            destination: isPermission ? destination.trim() || undefined : undefined,
+            address_during_leave: !isPermission ? address.trim() || undefined : undefined,
+            children_under_6_at_request: showChildrenField && childrenUnder6 ? parseInt(childrenUnder6, 10) : undefined,
+        };
+
         try {
-            await createLeave({
-                leave_type_id: selectedTypeId,
-                start_date: startDate.trim(),
-                end_date: endDate.trim(),
-                is_split: isSplit,
-                start_date_2: isSplit ? startDate2.trim() : undefined,
-                end_date_2: isSplit ? endDate2.trim() : undefined,
-                reason: reason.trim(),
-                destination: isPermission ? destination.trim() || undefined : undefined,
-                address_during_leave: !isPermission ? address.trim() || undefined : undefined,
-                children_under_6_at_request: showChildrenField && childrenUnder6 ? parseInt(childrenUnder6, 10) : undefined,
-                documentFile: document ?? undefined,
-            });
+            await createLeave({ ...payload, documentFile: document ?? undefined });
 
             Alert.alert('Envoyée', 'Votre demande a été soumise et le circuit de validation a démarré.');
             navigation.goBack();
         } catch (error) {
-            setErrorMessage(extractApiError(error).message);
+            if (axios.isAxiosError(error) && !error.response) {
+                // Serveur injoignable : on persiste le document (s'il y en a un) et on met
+                // la demande en file d'attente pour synchronisation ultérieure.
+                try {
+                    const persistedUri = document ? await persistPickedFile(document.uri, document.name) : undefined;
+
+                    await enqueue('create_leave', {
+                        ...payload,
+                        _persistedFileUri: persistedUri,
+                        _fileName: document?.name,
+                        _fileType: document?.type,
+                    });
+
+                    Alert.alert(
+                        'Enregistrée localement',
+                        "Le serveur n'est pas joignable actuellement. Votre demande sera envoyée automatiquement dès que vous serez sur le réseau de l'hôpital (bouton Synchroniser dans Paramètres)."
+                    );
+                    navigation.goBack();
+                } catch (persistError) {
+                    setErrorMessage("Impossible d'enregistrer la demande localement. Réessayez.");
+                }
+            } else {
+                setErrorMessage(extractApiError(error).message);
+            }
         } finally {
             setIsSubmitting(false);
         }

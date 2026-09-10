@@ -1,11 +1,13 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL, API_TIMEOUT_MS } from '../config/env';
+import { API_TIMEOUT_MS } from '../config/env';
 
 export const TOKEN_STORAGE_KEY = '@kisingrh/auth_token';
 
+// ⚠️ Pas de baseURL ici : elle est définie dynamiquement au démarrage par
+// NetworkConfigProvider (src/context/NetworkConfigContext.tsx), à partir de
+// l'adresse enregistrée par l'utilisateur — voir Paramètres > Réseau.
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
   timeout: API_TIMEOUT_MS,
   headers: {
     Accept: 'application/json',
