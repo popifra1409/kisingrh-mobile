@@ -13,6 +13,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { createDependent, NewDependentPayload } from '../api/dependents';
 import { extractApiError } from '../api/client';
+import { useAppTheme, ThemeColors } from '../context/ThemeContext';
 import type { AppStackParamList } from '../navigation/RootNavigator';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'AddDependent'>;
@@ -27,10 +28,13 @@ const RELATIONSHIPS: { value: NewDependentPayload['relationship']; label: string
 ];
 
 export default function AddDependentScreen({ navigation }: Props) {
+    const { colors, scaledFont } = useAppTheme();
+    const styles = createStyles(colors, scaledFont);
+
     const [relationship, setRelationship] = useState<NewDependentPayload['relationship']>('child');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
-    const [birthDate, setBirthDate] = useState(''); // YYYY-MM-DD
+    const [birthDate, setBirthDate] = useState('');
     const [birthPlace, setBirthPlace] = useState('');
     const [gender, setGender] = useState<'M' | 'F'>('M');
     const [phone, setPhone] = useState('');
@@ -108,7 +112,7 @@ export default function AddDependentScreen({ navigation }: Props) {
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.container}>
             <Text style={styles.label}>Lien de parenté</Text>
             <View style={styles.chipsRow}>
                 {RELATIONSHIPS.map((r) => (
@@ -122,10 +126,10 @@ export default function AddDependentScreen({ navigation }: Props) {
                 ))}
             </View>
 
-            <Field label="Prénom(s)" value={firstName} onChangeText={setFirstName} />
-            <Field label="Nom *" value={lastName} onChangeText={setLastName} />
-            <Field label="Date de naissance * (AAAA-MM-JJ)" value={birthDate} onChangeText={setBirthDate} placeholder="2018-02-10" />
-            <Field label="Lieu de naissance" value={birthPlace} onChangeText={setBirthPlace} />
+            <Field label="Prénom(s)" value={firstName} onChangeText={setFirstName} styles={styles} colors={colors} />
+            <Field label="Nom *" value={lastName} onChangeText={setLastName} styles={styles} colors={colors} />
+            <Field label="Date de naissance * (AAAA-MM-JJ)" value={birthDate} onChangeText={setBirthDate} placeholder="2018-02-10" styles={styles} colors={colors} />
+            <Field label="Lieu de naissance" value={birthPlace} onChangeText={setBirthPlace} styles={styles} colors={colors} />
 
             <Text style={styles.label}>Sexe</Text>
             <View style={styles.chipsRow}>
@@ -137,7 +141,7 @@ export default function AddDependentScreen({ navigation }: Props) {
                 </TouchableOpacity>
             </View>
 
-            <Field label="Téléphone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+            <Field label="Téléphone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" styles={styles} colors={colors} />
 
             <Text style={styles.sectionTitle}>Documents justificatifs</Text>
 
@@ -145,6 +149,7 @@ export default function AddDependentScreen({ navigation }: Props) {
                 label="Acte de naissance *"
                 file={birthCertificate}
                 onPress={() => pickDocument(setBirthCertificate)}
+                styles={styles}
             />
 
             {relationship === 'spouse' && (
@@ -152,15 +157,16 @@ export default function AddDependentScreen({ navigation }: Props) {
                     label="Acte de mariage *"
                     file={marriageCertificate}
                     onPress={() => pickDocument(setMarriageCertificate)}
+                    styles={styles}
                 />
             )}
 
-            <DocButton label="Carte d'identité (optionnel)" file={idCard} onPress={() => pickDocument(setIdCard)} />
+            <DocButton label="Carte d'identité (optionnel)" file={idCard} onPress={() => pickDocument(setIdCard)} styles={styles} />
 
             {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
 
             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>Envoyer</Text>}
+                {isSubmitting ? <ActivityIndicator color={colors.primaryText} /> : <Text style={styles.submitButtonText}>Envoyer</Text>}
             </TouchableOpacity>
         </ScrollView>
     );
@@ -172,22 +178,25 @@ function Field(props: {
     onChangeText: (v: string) => void;
     placeholder?: string;
     keyboardType?: 'default' | 'phone-pad';
+    styles: any;
+    colors: ThemeColors;
 }) {
     return (
-        <View style={styles.field}>
-            <Text style={styles.fieldLabel}>{props.label}</Text>
+        <View style={props.styles.field}>
+            <Text style={props.styles.fieldLabel}>{props.label}</Text>
             <TextInput
-                style={styles.fieldInput}
+                style={props.styles.fieldInput}
                 value={props.value}
                 onChangeText={props.onChangeText}
                 placeholder={props.placeholder}
+                placeholderTextColor={props.colors.textSecondary}
                 keyboardType={props.keyboardType ?? 'default'}
             />
         </View>
     );
 }
 
-function DocButton({ label, file, onPress }: { label: string; file: PickedFile | null; onPress: () => void }) {
+function DocButton({ label, file, onPress, styles }: { label: string; file: PickedFile | null; onPress: () => void; styles: any }) {
     return (
         <TouchableOpacity style={styles.docButton} onPress={onPress}>
             <Text style={styles.docButtonLabel}>{label}</Text>
@@ -198,47 +207,51 @@ function DocButton({ label, file, onPress }: { label: string; file: PickedFile |
     );
 }
 
-const styles = StyleSheet.create({
-    container: { padding: 20, paddingBottom: 60 },
-    label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, marginTop: 8 },
-    sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1e3a5f', marginTop: 16, marginBottom: 10 },
-    chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-    chip: {
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-    },
-    chipActive: { backgroundColor: '#1e3a5f', borderColor: '#1e3a5f' },
-    chipText: { fontSize: 13, color: '#374151' },
-    chipTextActive: { color: '#fff', fontWeight: '600' },
-    field: { marginBottom: 14 },
-    fieldLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 },
-    fieldInput: {
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        fontSize: 14,
-    },
-    docButton: {
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 10,
-    },
-    docButtonLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 },
-    docButtonValue: { fontSize: 13, color: '#1e3a5f' },
-    error: { color: '#dc2626', fontSize: 13, marginBottom: 12, textAlign: 'center' },
-    submitButton: {
-        backgroundColor: '#1e3a5f',
-        borderRadius: 8,
-        paddingVertical: 14,
-        alignItems: 'center',
-        marginTop: 10,
-    },
-    submitButtonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-});
+function createStyles(colors: ThemeColors, scaledFont: (n: number) => number) {
+    return StyleSheet.create({
+        container: { padding: 20, paddingBottom: 60 },
+        label: { fontSize: scaledFont(13), fontWeight: '600', color: colors.text, marginBottom: 8, marginTop: 8 },
+        sectionTitle: { fontSize: scaledFont(15), fontWeight: '700', color: colors.primary, marginTop: 16, marginBottom: 10 },
+        chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+        chip: {
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: colors.border,
+        },
+        chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+        chipText: { fontSize: scaledFont(13), color: colors.text },
+        chipTextActive: { color: colors.primaryText, fontWeight: '600' },
+        field: { marginBottom: 14 },
+        fieldLabel: { fontSize: scaledFont(12), fontWeight: '600', color: colors.textSecondary, marginBottom: 4 },
+        fieldInput: {
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 8,
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            fontSize: scaledFont(14),
+            color: colors.text,
+            backgroundColor: colors.surface,
+        },
+        docButton: {
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 10,
+        },
+        docButtonLabel: { fontSize: scaledFont(12), fontWeight: '600', color: colors.textSecondary, marginBottom: 4 },
+        docButtonValue: { fontSize: scaledFont(13), color: colors.primary },
+        error: { color: colors.danger, fontSize: scaledFont(13), marginBottom: 12, textAlign: 'center' },
+        submitButton: {
+            backgroundColor: colors.primary,
+            borderRadius: 8,
+            paddingVertical: 14,
+            alignItems: 'center',
+            marginTop: 10,
+        },
+        submitButtonText: { color: colors.primaryText, fontWeight: '700', fontSize: scaledFont(15) },
+    });
+}

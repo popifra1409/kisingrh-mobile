@@ -16,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { fetchProfile, updateProfile, uploadProfilePhoto, EmployeeProfile } from '../api/profile';
 import { extractApiError } from '../api/client';
 import { enqueue } from '../offline/queue';
+import { useAppTheme, ThemeColors } from '../context/ThemeContext';
 import axios from 'axios';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../navigation/RootNavigator';
@@ -23,6 +24,9 @@ import type { AppStackParamList } from '../navigation/RootNavigator';
 type Props = NativeStackScreenProps<AppStackParamList, 'Profile'>;
 
 export default function ProfileScreen({ navigation }: Props) {
+    const { colors, scaledFont } = useAppTheme();
+    const styles = createStyles(colors, scaledFont);
+
     const [profile, setProfile] = useState<EmployeeProfile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -137,8 +141,6 @@ export default function ProfileScreen({ navigation }: Props) {
             setIsEditing(false);
         } catch (error) {
             if (axios.isAxiosError(error) && !error.response) {
-                // Pas de réponse du serveur = probablement hors réseau hospitalier :
-                // on enregistre localement pour synchronisation ultérieure.
                 await enqueue('update_profile', payload);
                 setProfile((prev) => (prev ? { ...prev, ...payload } : prev));
                 setIsEditing(false);
@@ -157,7 +159,7 @@ export default function ProfileScreen({ navigation }: Props) {
     if (isLoading) {
         return (
             <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#1e3a5f" />
+                <ActivityIndicator size="large" color={colors.primary} />
             </View>
         );
     }
@@ -165,13 +167,14 @@ export default function ProfileScreen({ navigation }: Props) {
     if (!profile) {
         return (
             <View style={styles.centered}>
-                <Text>Impossible de charger le profil.</Text>
+                <Text style={{ color: colors.text }}>Impossible de charger le profil.</Text>
             </View>
         );
     }
 
     return (
         <ScrollView
+            style={{ backgroundColor: colors.background }}
             contentContainerStyle={styles.container}
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
         >
@@ -186,7 +189,7 @@ export default function ProfileScreen({ navigation }: Props) {
                     )}
                     <View style={styles.avatarEditBadge}>
                         {isUploadingPhoto ? (
-                            <ActivityIndicator size="small" color="#fff" />
+                            <ActivityIndicator size="small" color={colors.primaryText} />
                         ) : (
                             <Text style={styles.avatarEditText}>✏️</Text>
                         )}
@@ -211,11 +214,11 @@ export default function ProfileScreen({ navigation }: Props) {
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Affectation</Text>
-                <InfoRow label="Corps de métier" value={profile.trade_body} />
-                <InfoRow label="Qualification" value={profile.qualification} />
-                <InfoRow label="Poste" value={profile.job_title} />
-                <InfoRow label="Service" value={profile.service ?? profile.department} />
-                <InfoRow label="Statut" value={profile.administrative_status_label} />
+                <InfoRow label="Corps de métier" value={profile.trade_body} styles={styles} />
+                <InfoRow label="Qualification" value={profile.qualification} styles={styles} />
+                <InfoRow label="Poste" value={profile.job_title} styles={styles} />
+                <InfoRow label="Service" value={profile.service ?? profile.department} styles={styles} />
+                <InfoRow label="Statut" value={profile.administrative_status_label} styles={styles} />
             </View>
 
             <View style={styles.section}>
@@ -230,10 +233,10 @@ export default function ProfileScreen({ navigation }: Props) {
 
                 {isEditing ? (
                     <>
-                        <Field label="Téléphone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-                        <Field label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
-                        <Field label="Adresse" value={address} onChangeText={setAddress} />
-                        <Field label="Ville" value={city} onChangeText={setCity} />
+                        <Field label="Téléphone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" styles={styles} colors={colors} />
+                        <Field label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" styles={styles} colors={colors} />
+                        <Field label="Adresse" value={address} onChangeText={setAddress} styles={styles} colors={colors} />
+                        <Field label="Ville" value={city} onChangeText={setCity} styles={styles} colors={colors} />
 
                         {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
 
@@ -253,16 +256,16 @@ export default function ProfileScreen({ navigation }: Props) {
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={isSaving}>
-                                {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Enregistrer</Text>}
+                                {isSaving ? <ActivityIndicator color={colors.primaryText} /> : <Text style={styles.saveButtonText}>Enregistrer</Text>}
                             </TouchableOpacity>
                         </View>
                     </>
                 ) : (
                     <>
-                        <InfoRow label="Téléphone" value={profile.phone} />
-                        <InfoRow label="Email" value={profile.email} />
-                        <InfoRow label="Adresse" value={profile.address} />
-                        <InfoRow label="Ville" value={profile.city} />
+                        <InfoRow label="Téléphone" value={profile.phone} styles={styles} />
+                        <InfoRow label="Email" value={profile.email} styles={styles} />
+                        <InfoRow label="Adresse" value={profile.address} styles={styles} />
+                        <InfoRow label="Ville" value={profile.city} styles={styles} />
                     </>
                 )}
             </View>
@@ -270,7 +273,7 @@ export default function ProfileScreen({ navigation }: Props) {
     );
 }
 
-function InfoRow({ label, value }: { label: string; value: string | null }) {
+function InfoRow({ label, value, styles }: { label: string; value: string | null; styles: any }) {
     return (
         <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>{label}</Text>
@@ -284,108 +287,115 @@ function Field(props: {
     value: string;
     onChangeText: (v: string) => void;
     keyboardType?: 'default' | 'phone-pad' | 'email-address';
+    styles: any;
+    colors: ThemeColors;
 }) {
     return (
-        <View style={styles.field}>
-            <Text style={styles.fieldLabel}>{props.label}</Text>
+        <View style={props.styles.field}>
+            <Text style={props.styles.fieldLabel}>{props.label}</Text>
             <TextInput
-                style={styles.fieldInput}
+                style={props.styles.fieldInput}
                 value={props.value}
                 onChangeText={props.onChangeText}
                 keyboardType={props.keyboardType ?? 'default'}
                 autoCapitalize="none"
+                placeholderTextColor={props.colors.textSecondary}
             />
         </View>
     );
 }
 
-const styles = StyleSheet.create({
-    container: { padding: 20, paddingBottom: 40 },
-    centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    header: { alignItems: 'center', marginBottom: 20 },
-    avatar: { width: 96, height: 96, borderRadius: 48 },
-    avatarPlaceholder: {
-        width: 96,
-        height: 96,
-        borderRadius: 48,
-        backgroundColor: '#1e3a5f',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    avatarInitial: { color: '#fff', fontSize: 36, fontWeight: '700' },
-    avatarEditBadge: {
-        position: 'absolute',
-        bottom: 0,
-        right: 0,
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: '#1e3a5f',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: '#fff',
-    },
-    avatarEditText: { fontSize: 12 },
-    name: { fontSize: 19, fontWeight: '700', color: '#111827', marginTop: 10 },
-    matricule: { fontSize: 13, color: '#6b7280', marginTop: 2 },
-    quickLinks: { flexDirection: 'row', gap: 12, marginBottom: 20 },
-    quickLink: {
-        flex: 1,
-        backgroundColor: '#f3f4f6',
-        borderRadius: 12,
-        paddingVertical: 16,
-        alignItems: 'center',
-    },
-    quickLinkIcon: { fontSize: 24, marginBottom: 4 },
-    quickLinkLabel: { fontSize: 13, fontWeight: '600', color: '#374151' },
-    section: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-        padding: 16,
-        marginBottom: 16,
-    },
-    sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    sectionTitle: { fontSize: 14, fontWeight: '700', color: '#1e3a5f', marginBottom: 10 },
-    editLink: { fontSize: 13, fontWeight: '600', color: '#1e3a5f', marginBottom: 10 },
-    infoRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
-    },
-    infoLabel: { fontSize: 13, color: '#6b7280' },
-    infoValue: { fontSize: 13, fontWeight: '600', color: '#111827', maxWidth: '60%', textAlign: 'right' },
-    field: { marginBottom: 12 },
-    fieldLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 },
-    fieldInput: {
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        fontSize: 14,
-    },
-    error: { color: '#dc2626', fontSize: 12, marginBottom: 8 },
-    editActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-    cancelButton: {
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-        alignItems: 'center',
-    },
-    cancelButtonText: { color: '#374151', fontWeight: '600' },
-    saveButton: {
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: 8,
-        backgroundColor: '#1e3a5f',
-        alignItems: 'center',
-    },
-    saveButtonText: { color: '#fff', fontWeight: '600' },
-});
+function createStyles(colors: ThemeColors, scaledFont: (n: number) => number) {
+    return StyleSheet.create({
+        container: { padding: 20, paddingBottom: 40 },
+        centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+        header: { alignItems: 'center', marginBottom: 20 },
+        avatar: { width: 96, height: 96, borderRadius: 48 },
+        avatarPlaceholder: {
+            width: 96,
+            height: 96,
+            borderRadius: 48,
+            backgroundColor: colors.primary,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        avatarInitial: { color: colors.primaryText, fontSize: scaledFont(36), fontWeight: '700' },
+        avatarEditBadge: {
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            backgroundColor: colors.primary,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 2,
+            borderColor: colors.background,
+        },
+        avatarEditText: { fontSize: 12 },
+        name: { fontSize: scaledFont(19), fontWeight: '700', color: colors.text, marginTop: 10 },
+        matricule: { fontSize: scaledFont(13), color: colors.textSecondary, marginTop: 2 },
+        quickLinks: { flexDirection: 'row', gap: 12, marginBottom: 20 },
+        quickLink: {
+            flex: 1,
+            backgroundColor: colors.card,
+            borderRadius: 12,
+            paddingVertical: 16,
+            alignItems: 'center',
+        },
+        quickLinkIcon: { fontSize: 24, marginBottom: 4 },
+        quickLinkLabel: { fontSize: scaledFont(13), fontWeight: '600', color: colors.text },
+        section: {
+            backgroundColor: colors.surface,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: colors.border,
+            padding: 16,
+            marginBottom: 16,
+        },
+        sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+        sectionTitle: { fontSize: scaledFont(14), fontWeight: '700', color: colors.primary, marginBottom: 10 },
+        editLink: { fontSize: scaledFont(13), fontWeight: '600', color: colors.primary, marginBottom: 10 },
+        infoRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            paddingVertical: 8,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+        },
+        infoLabel: { fontSize: scaledFont(13), color: colors.textSecondary },
+        infoValue: { fontSize: scaledFont(13), fontWeight: '600', color: colors.text, maxWidth: '60%', textAlign: 'right' },
+        field: { marginBottom: 12 },
+        fieldLabel: { fontSize: scaledFont(12), fontWeight: '600', color: colors.textSecondary, marginBottom: 4 },
+        fieldInput: {
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 8,
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            fontSize: scaledFont(14),
+            color: colors.text,
+            backgroundColor: colors.background,
+        },
+        error: { color: colors.danger, fontSize: scaledFont(12), marginBottom: 8 },
+        editActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+        cancelButton: {
+            flex: 1,
+            paddingVertical: 12,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: colors.border,
+            alignItems: 'center',
+        },
+        cancelButtonText: { color: colors.text, fontWeight: '600' },
+        saveButton: {
+            flex: 1,
+            paddingVertical: 12,
+            borderRadius: 8,
+            backgroundColor: colors.primary,
+            alignItems: 'center',
+        },
+        saveButtonText: { color: colors.primaryText, fontWeight: '600' },
+    });
+}

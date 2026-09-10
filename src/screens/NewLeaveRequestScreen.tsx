@@ -16,6 +16,7 @@ import { fetchLeaveTypes, fetchLeaveBalance, createLeave, LeaveType, LeaveBalanc
 import { extractApiError } from '../api/client';
 import { enqueue } from '../offline/queue';
 import { persistPickedFile } from '../offline/fileStorage';
+import { useAppTheme, ThemeColors } from '../context/ThemeContext';
 import axios from 'axios';
 import type { AppStackParamList } from '../navigation/RootNavigator';
 
@@ -24,6 +25,9 @@ type Props = NativeStackScreenProps<AppStackParamList, 'NewLeaveRequest'>;
 type PickedFile = { uri: string; name: string; type: string };
 
 export default function NewLeaveRequestScreen({ navigation }: Props) {
+    const { colors, scaledFont } = useAppTheme();
+    const styles = createStyles(colors, scaledFont);
+
     const [types, setTypes] = useState<LeaveType[]>([]);
     const [isLoadingTypes, setIsLoadingTypes] = useState(true);
     const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
@@ -137,8 +141,6 @@ export default function NewLeaveRequestScreen({ navigation }: Props) {
             navigation.goBack();
         } catch (error) {
             if (axios.isAxiosError(error) && !error.response) {
-                // Serveur injoignable : on persiste le document (s'il y en a un) et on met
-                // la demande en file d'attente pour synchronisation ultérieure.
                 try {
                     const persistedUri = document ? await persistPickedFile(document.uri, document.name) : undefined;
 
@@ -168,13 +170,13 @@ export default function NewLeaveRequestScreen({ navigation }: Props) {
     if (isLoadingTypes) {
         return (
             <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#1e3a5f" />
+                <ActivityIndicator size="large" color={colors.primary} />
             </View>
         );
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={styles.container}>
             <Text style={styles.label}>Type de congé</Text>
             <View style={styles.chipsColumn}>
                 {types.map((t) => (
@@ -190,7 +192,7 @@ export default function NewLeaveRequestScreen({ navigation }: Props) {
 
             <View style={styles.balanceBox}>
                 {isLoadingBalance ? (
-                    <ActivityIndicator size="small" color="#1e3a5f" />
+                    <ActivityIndicator size="small" color={colors.primary} />
                 ) : balance ? (
                     balance.eligible === false ? (
                         <Text style={styles.balanceWarning}>
@@ -206,8 +208,8 @@ export default function NewLeaveRequestScreen({ navigation }: Props) {
                 ) : null}
             </View>
 
-            <Field label="Date de début (1ère prise) *" value={startDate} onChangeText={setStartDate} placeholder="2026-07-01" />
-            <Field label="Date de fin (1ère prise) *" value={endDate} onChangeText={setEndDate} placeholder="2026-07-15" />
+            <Field label="Date de début (1ère prise) *" value={startDate} onChangeText={setStartDate} placeholder="2026-07-01" styles={styles} colors={colors} />
+            <Field label="Date de fin (1ère prise) *" value={endDate} onChangeText={setEndDate} placeholder="2026-07-15" styles={styles} colors={colors} />
 
             <View style={styles.switchRow}>
                 <Text style={styles.switchLabel}>Fractionner en 2 prises</Text>
@@ -216,15 +218,15 @@ export default function NewLeaveRequestScreen({ navigation }: Props) {
 
             {isSplit && (
                 <>
-                    <Field label="Date de début (2ème prise) *" value={startDate2} onChangeText={setStartDate2} placeholder="2026-09-01" />
-                    <Field label="Date de fin (2ème prise) *" value={endDate2} onChangeText={setEndDate2} placeholder="2026-09-08" />
+                    <Field label="Date de début (2ème prise) *" value={startDate2} onChangeText={setStartDate2} placeholder="2026-09-01" styles={styles} colors={colors} />
+                    <Field label="Date de fin (2ème prise) *" value={endDate2} onChangeText={setEndDate2} placeholder="2026-09-08" styles={styles} colors={colors} />
                 </>
             )}
 
             {isPermission ? (
-                <Field label="Destination" value={destination} onChangeText={setDestination} />
+                <Field label="Destination" value={destination} onChangeText={setDestination} styles={styles} colors={colors} />
             ) : (
-                <Field label="Adresse pendant le congé" value={address} onChangeText={setAddress} />
+                <Field label="Adresse pendant le congé" value={address} onChangeText={setAddress} styles={styles} colors={colors} />
             )}
 
             {showChildrenField && (
@@ -233,6 +235,8 @@ export default function NewLeaveRequestScreen({ navigation }: Props) {
                     value={childrenUnder6}
                     onChangeText={setChildrenUnder6}
                     keyboardType="number-pad"
+                    styles={styles}
+                    colors={colors}
                 />
             )}
 
@@ -244,6 +248,7 @@ export default function NewLeaveRequestScreen({ navigation }: Props) {
                     onChangeText={setReason}
                     multiline
                     numberOfLines={3}
+                    placeholderTextColor={colors.textSecondary}
                 />
             </View>
 
@@ -260,7 +265,7 @@ export default function NewLeaveRequestScreen({ navigation }: Props) {
             {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
 
             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>Soumettre la demande</Text>}
+                {isSubmitting ? <ActivityIndicator color={colors.primaryText} /> : <Text style={styles.submitButtonText}>Soumettre la demande</Text>}
             </TouchableOpacity>
         </ScrollView>
     );
@@ -272,82 +277,89 @@ function Field(props: {
     onChangeText: (v: string) => void;
     placeholder?: string;
     keyboardType?: 'default' | 'number-pad';
+    styles: any;
+    colors: ThemeColors;
 }) {
     return (
-        <View style={styles.field}>
-            <Text style={styles.fieldLabel}>{props.label}</Text>
+        <View style={props.styles.field}>
+            <Text style={props.styles.fieldLabel}>{props.label}</Text>
             <TextInput
-                style={styles.fieldInput}
+                style={props.styles.fieldInput}
                 value={props.value}
                 onChangeText={props.onChangeText}
                 placeholder={props.placeholder}
+                placeholderTextColor={props.colors.textSecondary}
                 keyboardType={props.keyboardType ?? 'default'}
             />
         </View>
     );
 }
 
-const styles = StyleSheet.create({
-    container: { padding: 20, paddingBottom: 60 },
-    centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8 },
-    chipsColumn: { gap: 8, marginBottom: 12 },
-    chip: {
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-    },
-    chipActive: { backgroundColor: '#1e3a5f', borderColor: '#1e3a5f' },
-    chipText: { fontSize: 13, color: '#374151' },
-    chipTextActive: { color: '#fff', fontWeight: '600' },
-    balanceBox: {
-        backgroundColor: '#f0f9ff',
-        borderRadius: 8,
-        padding: 10,
-        marginBottom: 16,
-        minHeight: 20,
-        justifyContent: 'center',
-    },
-    balanceText: { fontSize: 12, color: '#0369a1' },
-    balanceWarning: { fontSize: 12, color: '#92400e' },
-    field: { marginBottom: 14 },
-    fieldLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 4 },
-    fieldInput: {
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        fontSize: 14,
-    },
-    textArea: { minHeight: 80, textAlignVertical: 'top' },
-    switchRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 14,
-        paddingVertical: 4,
-    },
-    switchLabel: { fontSize: 13, fontWeight: '600', color: '#374151' },
-    docButton: {
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 10,
-    },
-    docButtonLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 2 },
-    docButtonHint: { fontSize: 11, color: '#9ca3af', marginBottom: 6 },
-    docButtonValue: { fontSize: 13, color: '#1e3a5f' },
-    error: { color: '#dc2626', fontSize: 13, marginBottom: 12, textAlign: 'center' },
-    submitButton: {
-        backgroundColor: '#1e3a5f',
-        borderRadius: 8,
-        paddingVertical: 14,
-        alignItems: 'center',
-        marginTop: 10,
-    },
-    submitButtonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-});
+function createStyles(colors: ThemeColors, scaledFont: (n: number) => number) {
+    return StyleSheet.create({
+        container: { padding: 20, paddingBottom: 60 },
+        centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+        label: { fontSize: scaledFont(13), fontWeight: '600', color: colors.text, marginBottom: 8 },
+        chipsColumn: { gap: 8, marginBottom: 12 },
+        chip: {
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: colors.border,
+        },
+        chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+        chipText: { fontSize: scaledFont(13), color: colors.text },
+        chipTextActive: { color: colors.primaryText, fontWeight: '600' },
+        balanceBox: {
+            backgroundColor: colors.surface,
+            borderRadius: 8,
+            padding: 10,
+            marginBottom: 16,
+            minHeight: 20,
+            justifyContent: 'center',
+        },
+        balanceText: { fontSize: scaledFont(12), color: colors.primary },
+        balanceWarning: { fontSize: scaledFont(12), color: colors.warning },
+        field: { marginBottom: 14 },
+        fieldLabel: { fontSize: scaledFont(12), fontWeight: '600', color: colors.textSecondary, marginBottom: 4 },
+        fieldInput: {
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 8,
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            fontSize: scaledFont(14),
+            color: colors.text,
+            backgroundColor: colors.surface,
+        },
+        textArea: { minHeight: 80, textAlignVertical: 'top' },
+        switchRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 14,
+            paddingVertical: 4,
+        },
+        switchLabel: { fontSize: scaledFont(13), fontWeight: '600', color: colors.text },
+        docButton: {
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 10,
+        },
+        docButtonLabel: { fontSize: scaledFont(12), fontWeight: '600', color: colors.textSecondary, marginBottom: 2 },
+        docButtonHint: { fontSize: scaledFont(11), color: colors.textSecondary, marginBottom: 6 },
+        docButtonValue: { fontSize: scaledFont(13), color: colors.primary },
+        error: { color: colors.danger, fontSize: scaledFont(13), marginBottom: 12, textAlign: 'center' },
+        submitButton: {
+            backgroundColor: colors.primary,
+            borderRadius: 8,
+            paddingVertical: 14,
+            alignItems: 'center',
+            marginTop: 10,
+        },
+        submitButtonText: { color: colors.primaryText, fontWeight: '700', fontSize: scaledFont(15) },
+    });
+}

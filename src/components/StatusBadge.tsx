@@ -1,20 +1,25 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useAppTheme } from '../context/ThemeContext';
 
 type Status = 'pending' | 'validated' | 'rejected';
 
-const COLORS: Record<Status, { bg: string; text: string }> = {
-    pending: { bg: '#fef3c7', text: '#92400e' },
-    validated: { bg: '#d1fae5', text: '#065f46' },
-    rejected: { bg: '#fee2e2', text: '#991b1b' },
-};
+function getColors(status: Status, isDark: boolean) {
+    const palette = {
+        pending: isDark ? { bg: '#78350f', text: '#fde68a' } : { bg: '#fef3c7', text: '#92400e' },
+        validated: isDark ? { bg: '#064e3b', text: '#a7f3d0' } : { bg: '#d1fae5', text: '#065f46' },
+        rejected: isDark ? { bg: '#7f1d1d', text: '#fecaca' } : { bg: '#fee2e2', text: '#991b1b' },
+    };
+    return palette[status] ?? palette.pending;
+}
 
 export default function StatusBadge({ status, label }: { status: Status; label: string }) {
-    const colors = COLORS[status] ?? COLORS.pending;
+    const { resolvedScheme, scaledFont } = useAppTheme();
+    const colors = getColors(status, resolvedScheme === 'dark');
 
     return (
         <View style={[styles.badge, { backgroundColor: colors.bg }]}>
-            <Text style={[styles.text, { color: colors.text }]}>{label}</Text>
+            <Text style={[styles.text, { color: colors.text, fontSize: scaledFont(11) }]}>{label}</Text>
         </View>
     );
 }
@@ -26,5 +31,5 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignSelf: 'flex-start',
     },
-    text: { fontSize: 11, fontWeight: '600' },
+    text: { fontWeight: '600' },
 });

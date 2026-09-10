@@ -1,10 +1,21 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NetworkConfigProvider } from './src/context/NetworkConfigContext';
-import { ThemeProvider } from './src/context/ThemeContext';
+import { ThemeProvider, useAppTheme } from './src/context/ThemeContext';
 import { AppInfoProvider } from './src/context/AppInfoContext';
 import { AuthProvider } from './src/context/AuthContext';
 import RootNavigator from './src/navigation/RootNavigator';
+
+function AppContent() {
+  const { resolvedScheme } = useAppTheme();
+
+  return (
+    <>
+      <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
+      <RootNavigator />
+    </>
+  );
+}
 
 export default function App() {
   return (
@@ -12,8 +23,7 @@ export default function App() {
       <ThemeProvider>
         <AppInfoProvider>
           <AuthProvider>
-            <StatusBar style="auto" />
-            <RootNavigator />
+            <AppContent />
           </AuthProvider>
         </AppInfoProvider>
       </ThemeProvider>

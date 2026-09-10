@@ -14,6 +14,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { useAppInfo } from '../context/AppInfoContext';
+import { useAppTheme, ThemeColors } from '../context/ThemeContext';
 import { extractApiError } from '../api/client';
 import type { AuthStackParamList } from '../navigation/RootNavigator';
 
@@ -22,6 +23,8 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Activate'>;
 export default function ActivateScreen({ navigation }: Props) {
   const { activate } = useAuth();
   const { appInfo } = useAppInfo();
+  const { colors, scaledFont } = useAppTheme();
+  const styles = createStyles(colors, scaledFont);
 
   const [matricule, setMatricule] = useState('');
   const [temporaryPassword, setTemporaryPassword] = useState('');
@@ -99,6 +102,7 @@ export default function ActivateScreen({ navigation }: Props) {
           <TextInput
             style={styles.input}
             placeholder="Ex: 98240812A"
+            placeholderTextColor={colors.textSecondary}
             autoCapitalize="characters"
             autoCorrect={false}
             value={matricule}
@@ -112,6 +116,7 @@ export default function ActivateScreen({ navigation }: Props) {
           <TextInput
             style={styles.input}
             placeholder="Donné par les RH"
+            placeholderTextColor={colors.textSecondary}
             secureTextEntry
             value={temporaryPassword}
             onChangeText={setTemporaryPassword}
@@ -126,6 +131,7 @@ export default function ActivateScreen({ navigation }: Props) {
           <TextInput
             style={styles.input}
             placeholder="8 caractères minimum"
+            placeholderTextColor={colors.textSecondary}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -138,6 +144,7 @@ export default function ActivateScreen({ navigation }: Props) {
           <TextInput
             style={styles.input}
             placeholder="••••••••"
+            placeholderTextColor={colors.textSecondary}
             secureTextEntry
             value={passwordConfirmation}
             onChangeText={setPasswordConfirmation}
@@ -152,7 +159,7 @@ export default function ActivateScreen({ navigation }: Props) {
           disabled={isSubmitting}
         >
           {isSubmitting ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.primaryText} />
           ) : (
             <Text style={styles.buttonText}>Activer mon compte</Text>
           )}
@@ -166,53 +173,57 @@ export default function ActivateScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  container: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
-  },
-  logoContainer: { alignItems: 'center', marginBottom: 20 },
-  logo: { width: 80, height: 80 },
-  logoPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 14,
-    backgroundColor: '#1e3a5f',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoPlaceholderText: { color: '#fff', fontSize: 30, fontWeight: '700' },
-  title: { fontSize: 26, fontWeight: '700', color: '#1e3a5f', marginBottom: 8 },
-  subtitle: { fontSize: 13, color: '#6b7280', marginBottom: 28, lineHeight: 18 },
-  field: { marginBottom: 16 },
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-  },
-  fieldError: { color: '#dc2626', fontSize: 12, marginTop: 4 },
-  error: {
-    color: '#dc2626',
-    fontSize: 13,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: '#1e3a5f',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  linkButton: { marginTop: 20, alignItems: 'center' },
-  linkText: { color: '#1e3a5f', fontSize: 14, fontWeight: '500' },
-});
+function createStyles(colors: ThemeColors, scaledFont: (n: number) => number) {
+  return StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.background },
+    container: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      padding: 24,
+      backgroundColor: colors.background,
+    },
+    logoContainer: { alignItems: 'center', marginBottom: 20 },
+    logo: { width: 80, height: 80 },
+    logoPlaceholder: {
+      width: 80,
+      height: 80,
+      borderRadius: 14,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    logoPlaceholderText: { color: colors.primaryText, fontSize: scaledFont(30), fontWeight: '700' },
+    title: { fontSize: scaledFont(26), fontWeight: '700', color: colors.primary, marginBottom: 8 },
+    subtitle: { fontSize: scaledFont(13), color: colors.textSecondary, marginBottom: 28, lineHeight: 18 },
+    field: { marginBottom: 16 },
+    label: { fontSize: scaledFont(13), fontWeight: '600', color: colors.text, marginBottom: 6 },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontSize: scaledFont(15),
+      color: colors.text,
+      backgroundColor: colors.surface,
+    },
+    fieldError: { color: colors.danger, fontSize: scaledFont(12), marginTop: 4 },
+    error: {
+      color: colors.danger,
+      fontSize: scaledFont(13),
+      marginBottom: 12,
+      textAlign: 'center',
+    },
+    button: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingVertical: 14,
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    buttonDisabled: { opacity: 0.6 },
+    buttonText: { color: colors.primaryText, fontSize: scaledFont(16), fontWeight: '600' },
+    linkButton: { marginTop: 20, alignItems: 'center' },
+    linkText: { color: colors.primary, fontSize: scaledFont(14), fontWeight: '500' },
+  });
+}

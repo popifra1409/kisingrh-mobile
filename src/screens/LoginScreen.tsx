@@ -14,6 +14,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { useAppInfo } from '../context/AppInfoContext';
+import { useAppTheme, ThemeColors } from '../context/ThemeContext';
 import { extractApiError } from '../api/client';
 import type { AuthStackParamList } from '../navigation/RootNavigator';
 
@@ -22,6 +23,9 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 export default function LoginScreen({ navigation }: Props) {
   const { login } = useAuth();
   const { appInfo } = useAppInfo();
+  const { colors, scaledFont } = useAppTheme();
+  const styles = createStyles(colors, scaledFont);
+
   const [matricule, setMatricule] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,6 +79,7 @@ export default function LoginScreen({ navigation }: Props) {
           <TextInput
             style={styles.input}
             placeholder="Ex: 98240812A"
+            placeholderTextColor={colors.textSecondary}
             autoCapitalize="characters"
             autoCorrect={false}
             value={matricule}
@@ -87,6 +92,7 @@ export default function LoginScreen({ navigation }: Props) {
           <TextInput
             style={styles.input}
             placeholder="••••••••"
+            placeholderTextColor={colors.textSecondary}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -101,7 +107,7 @@ export default function LoginScreen({ navigation }: Props) {
           disabled={isSubmitting}
         >
           {isSubmitting ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.primaryText} />
           ) : (
             <Text style={styles.buttonText}>Se connecter</Text>
           )}
@@ -118,54 +124,58 @@ export default function LoginScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  container: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
-  },
-  logoContainer: { alignItems: 'center', marginBottom: 24 },
-  logo: { width: 96, height: 96, marginBottom: 8 },
-  logoPlaceholder: {
-    width: 96,
-    height: 96,
-    borderRadius: 16,
-    backgroundColor: '#1e3a5f',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  logoPlaceholderText: { color: '#fff', fontSize: 36, fontWeight: '700' },
-  hospitalName: { fontSize: 13, fontWeight: '600', color: '#374151', textAlign: 'center' },
-  title: { fontSize: 28, fontWeight: '700', color: '#1e3a5f', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#6b7280', marginBottom: 32 },
-  field: { marginBottom: 16 },
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-  },
-  error: {
-    color: '#dc2626',
-    fontSize: 13,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: '#1e3a5f',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  linkButton: { marginTop: 20, alignItems: 'center' },
-  linkText: { color: '#1e3a5f', fontSize: 14, fontWeight: '500' },
-});
+function createStyles(colors: ThemeColors, scaledFont: (n: number) => number) {
+  return StyleSheet.create({
+    flex: { flex: 1, backgroundColor: colors.background },
+    container: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      padding: 24,
+      backgroundColor: colors.background,
+    },
+    logoContainer: { alignItems: 'center', marginBottom: 24 },
+    logo: { width: 96, height: 96, marginBottom: 8 },
+    logoPlaceholder: {
+      width: 96,
+      height: 96,
+      borderRadius: 16,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    logoPlaceholderText: { color: colors.primaryText, fontSize: scaledFont(36), fontWeight: '700' },
+    hospitalName: { fontSize: scaledFont(13), fontWeight: '600', color: colors.text, textAlign: 'center' },
+    title: { fontSize: scaledFont(28), fontWeight: '700', color: colors.primary, marginBottom: 4 },
+    subtitle: { fontSize: scaledFont(14), color: colors.textSecondary, marginBottom: 32 },
+    field: { marginBottom: 16 },
+    label: { fontSize: scaledFont(13), fontWeight: '600', color: colors.text, marginBottom: 6 },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontSize: scaledFont(15),
+      color: colors.text,
+      backgroundColor: colors.surface,
+    },
+    error: {
+      color: colors.danger,
+      fontSize: scaledFont(13),
+      marginBottom: 12,
+      textAlign: 'center',
+    },
+    button: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingVertical: 14,
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    buttonDisabled: { opacity: 0.6 },
+    buttonText: { color: colors.primaryText, fontSize: scaledFont(16), fontWeight: '600' },
+    linkButton: { marginTop: 20, alignItems: 'center' },
+    linkText: { color: colors.primary, fontSize: scaledFont(14), fontWeight: '500' },
+  });
+}

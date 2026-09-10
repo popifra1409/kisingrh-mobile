@@ -13,17 +13,24 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { fetchLeaves, LeaveSummary } from '../api/leaves';
 import { extractApiError } from '../api/client';
+import { useAppTheme, ThemeColors } from '../context/ThemeContext';
 import type { AppStackParamList } from '../navigation/RootNavigator';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Leaves'>;
 
-const STATUS_COLORS: Record<LeaveSummary['status'], { bg: string; text: string; label: string }> = {
-    pending: { bg: '#fef3c7', text: '#92400e', label: 'En attente' },
-    approved: { bg: '#d1fae5', text: '#065f46', label: 'Approuvé' },
-    rejected: { bg: '#fee2e2', text: '#991b1b', label: 'Rejeté' },
-};
+function getStatusColors(status: LeaveSummary['status'], isDark: boolean) {
+    const palette = {
+        pending: isDark ? { bg: '#78350f', text: '#fde68a', label: 'En attente' } : { bg: '#fef3c7', text: '#92400e', label: 'En attente' },
+        approved: isDark ? { bg: '#064e3b', text: '#a7f3d0', label: 'Approuvé' } : { bg: '#d1fae5', text: '#065f46', label: 'Approuvé' },
+        rejected: isDark ? { bg: '#7f1d1d', text: '#fecaca', label: 'Rejeté' } : { bg: '#fee2e2', text: '#991b1b', label: 'Rejeté' },
+    };
+    return palette[status];
+}
 
 export default function LeavesScreen({ navigation }: Props) {
+    const { colors, scaledFont, resolvedScheme } = useAppTheme();
+    const styles = createStyles(colors, scaledFont);
+
     const [leaves, setLeaves] = useState<LeaveSummary[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -55,13 +62,13 @@ export default function LeavesScreen({ navigation }: Props) {
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => { setIsRefreshing(true); load(); }} />}
                 ListEmptyComponent={
                     isLoading ? (
-                        <ActivityIndicator style={{ marginTop: 40 }} color="#1e3a5f" />
+                        <ActivityIndicator style={{ marginTop: 40 }} color={colors.primary} />
                     ) : (
                         <Text style={styles.emptyText}>Aucune demande de congé pour le moment.</Text>
                     )
                 }
                 renderItem={({ item }) => {
-                    const statusStyle = STATUS_COLORS[item.status];
+                    const statusStyle = getStatusColors(item.status, resolvedScheme === 'dark');
                     return (
                         <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('LeaveDetail', { id: item.id })}>
                             <View style={styles.cardHeader}>
@@ -96,34 +103,36 @@ export default function LeavesScreen({ navigation }: Props) {
     );
 }
 
-const styles = StyleSheet.create({
-    flex: { flex: 1, backgroundColor: '#fff' },
-    list: { padding: 16, paddingBottom: 90 },
-    emptyText: { textAlign: 'center', color: '#6b7280', marginTop: 40, fontSize: 13 },
-    card: {
-        backgroundColor: '#f9fafb',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-        padding: 14,
-        marginBottom: 12,
-    },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
-    cardTitle: { fontSize: 15, fontWeight: '600', color: '#111827', flex: 1, marginRight: 8 },
-    cardDates: { fontSize: 13, color: '#374151' },
-    cardStep: { fontSize: 12, color: '#92400e', marginTop: 6 },
-    cardReturn: { fontSize: 12, color: '#374151', marginTop: 6 },
-    badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-    badgeText: { fontSize: 11, fontWeight: '600' },
-    fab: {
-        position: 'absolute',
-        bottom: 20,
-        left: 16,
-        right: 16,
-        backgroundColor: '#1e3a5f',
-        borderRadius: 10,
-        paddingVertical: 14,
-        alignItems: 'center',
-    },
-    fabText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-});
+function createStyles(colors: ThemeColors, scaledFont: (n: number) => number) {
+    return StyleSheet.create({
+        flex: { flex: 1, backgroundColor: colors.background },
+        list: { padding: 16, paddingBottom: 90 },
+        emptyText: { textAlign: 'center', color: colors.textSecondary, marginTop: 40, fontSize: scaledFont(13) },
+        card: {
+            backgroundColor: colors.surface,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: colors.border,
+            padding: 14,
+            marginBottom: 12,
+        },
+        cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
+        cardTitle: { fontSize: scaledFont(15), fontWeight: '600', color: colors.text, flex: 1, marginRight: 8 },
+        cardDates: { fontSize: scaledFont(13), color: colors.text },
+        cardStep: { fontSize: scaledFont(12), color: colors.warning, marginTop: 6 },
+        cardReturn: { fontSize: scaledFont(12), color: colors.textSecondary, marginTop: 6 },
+        badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+        badgeText: { fontSize: scaledFont(11), fontWeight: '600' },
+        fab: {
+            position: 'absolute',
+            bottom: 20,
+            left: 16,
+            right: 16,
+            backgroundColor: colors.primary,
+            borderRadius: 10,
+            paddingVertical: 14,
+            alignItems: 'center',
+        },
+        fabText: { color: colors.primaryText, fontWeight: '700', fontSize: scaledFont(14) },
+    });
+}
